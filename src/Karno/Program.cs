@@ -11,7 +11,7 @@ namespace Karno
         {
             void PrintSeparator() => Console.WriteLine(new string('=', Console.WindowWidth));
 
-            var map = new KMap(4, new HashSet<long>() { 0, 2, 4, 5, 6, 7, 8, 12 }, new HashSet<long>() { });
+            var map = new KMap(4, [0, 2, 4, 5, 6, 7, 8, 12], []);
             map.PrintCoverages();
             PrintSeparator();
 
