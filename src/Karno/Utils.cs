@@ -84,16 +84,18 @@ namespace Karno
             Console.WriteLine("SOP: " + coverage.ToSOPExpression());
         }
 
-        public static void PrintCoverages(this KMap map, bool only_min = true)
+        public static void PrintCoverages( this KMap map, bool only_min = true )
         {
             var coverages = map.Minimize();
-            if (coverages.Count == 0)
+            if ( coverages.Count == 0 )
                 return;
+
             var min_cost = coverages.Min(c => c.Cost.Value);
-            foreach(var coverage in coverages)
+            foreach( var coverage in coverages )
             {
-                if (only_min && coverage.Cost.Value > min_cost)
+                if ( only_min && coverage.Cost.Value > min_cost )
                     continue;
+
                 coverage.PrintCoverage();
             }
         }
@@ -116,13 +118,13 @@ namespace Karno
             return Convert.ToString(num, 2).PadLeft(num_bits, '0');
         }
 
-        public static int Hamming(string s1, string s2)
+        public static int Hamming( string s1, string s2 )
         {
-            Debug.Assert(s1.Length == s2.Length);
+            Debug.Assert( s1.Length == s2.Length );
 
             int d = 0;
-            for (int i = 0; i < s1.Length; i++)
-                if (s1[i] != s2[i])
+            for ( int i = 0; i < s1.Length; i++ )
+                if ( s1[i] != s2[i] )
                     d++;
             return d;
         }
