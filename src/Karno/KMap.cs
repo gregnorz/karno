@@ -10,20 +10,23 @@ namespace Karno
         SortedSet<string> on_set_binary;
         SortedSet<string> dc_set_binary;
 
-        public KMap(int number_of_variables, HashSet<long> on_set, HashSet<long> dc_set)
+        public KMap( int number_of_variables, HashSet<long> on_set, HashSet<long> dc_set )
         {
-            if (on_set.Intersect(dc_set).Count() > 0)
-                throw new ArgumentException("ON set and DC set must be disjoint");
+            if ( on_set.Intersect(dc_set).Count() > 0 )
+                throw new ArgumentException( "ON set and DC set must be disjoint" );
 
-            if (on_set.Count == 0)
-                throw new ArgumentException("ON set can't be empty");
+            if ( on_set.Count == 0 )
+                throw new ArgumentException( "ON set can't be empty ");
 
             NumberOfVariables = number_of_variables;
             ONSet = on_set;
             DCSet = dc_set;
 
-            on_set_binary = new SortedSet<string>(ONSet.Select(e => e.ToBinaryString(number_of_variables)));
-            dc_set_binary = new SortedSet<string>(DCSet.Select(e => e.ToBinaryString(number_of_variables)));
+            var onSet = ONSet.Select( x => x.ToBinaryString(number_of_variables) );
+            var dcSet = DCSet.Select( x => x.ToBinaryString(number_of_variables) );
+
+            on_set_binary = new SortedSet<string>( onSet );
+            dc_set_binary = new SortedSet<string>( dcSet );
         }
 
         public int NumberOfVariables { get; private set; }
@@ -37,7 +40,7 @@ namespace Karno
             var groups = new Coverage();
 
             // Generate initial groups (of cardinality 1)
-            foreach (var one in on_set_binary)
+            foreach ( var one in on_set_binary )
                 groups.Add(new Group() { one });
 
             // onsider the don't cares as 'ones', but don't consider them essential
@@ -65,52 +68,60 @@ namespace Karno
             return GetCoverages(groups);
         }
 
-        Coverage MergeGroups(Coverage groups)
+        Coverage MergeGroups( Coverage groups )
         {
             var merged = new Coverage();
-            foreach(var g1 in groups)
+
+            foreach( var g1 in groups )
             {
-                foreach(var g2 in groups)
+                foreach( var g2 in groups )
                 {
+                    var intersect = g1.Intersect( g2 ).Count();
+                    var adjacent = AreGroupsAdjacent( g1, g2);
+
                     // Two groups can only merge if they are adjacent and disjoint
-                    if (g1.Intersect(g2).Count() == 0 && AreGroupsAdjacent(g1, g2))
+                    if ( intersect == 0 && adjacent )
                     {
-                        var new_group = new Group(g1.Union(g2));
-                        merged.Add(new_group);
+                        var new_group = new Group( g1.Union(g2) );
+                        merged.Add( new_group );
                     }
                 }
             }
 
-            return new Coverage(groups.Union(merged));
+            return new Coverage( groups.Union(merged) );
         }
 
-        bool AreGroupsAdjacent(Group group1, Group group2)
+        bool AreGroupsAdjacent( Group group1, Group group2 )
         {
             // In order to be adjacent, they need to have the same cardinality
-            if (group1.Count != group2.Count)
+            if ( group1.Count != group2.Count )
                 return false;
 
             // For each one in the first group, there should be one 'pairing' one in the other
             // such that they have a hamming distance of 1.
             var matched_in_group2 = new Group();
-            foreach(var term1 in group1)
+            foreach( var term1 in group1 )
             {
                 var matched = false;
-                foreach(var term2 in group2)
+                foreach( var term2 in group2 )
                 {
+                    var group2Contains = matched_in_group2.Contains( term2 );
+                    var hammingDistance = Utils.Hamming( term1, term2 );
 
-                    if (matched_in_group2.Contains(term2))
+                    if ( group2Contains )
+                    {
                         // This one has already been matched previously, skip it
                         continue;
-                    else if (Utils.Hamming(term1, term2) == 1)
+                    }
+                    else if ( hammingDistance == 1 )
                     {
                         matched = true;
-                        matched_in_group2.Add(term2);
+                        matched_in_group2.Add( term2 );
                         break;
                     }
                 }
 
-                if (!matched)
+                if ( !matched )
                     // If there is even one "one" in the first group that doesn't
                     // have a matching pair, then the two groups cannot be adjacent
                     return false;
@@ -195,26 +206,28 @@ namespace Karno
             }
         }
 
-        private long CoverageCost(Coverage selected_groups)
+        private long CoverageCost( Coverage selected_groups )
         {
             // The number of literals in the minterm produced by a group of cardinality 2 ^ n is N - n
             // where N is the number of variables of the boolean function to minimize
             long cost = 0;
-            foreach(var g in selected_groups)
+            foreach ( var g in selected_groups )
             {
-                var n = (long)Math.Log(g.Count, 2);
+                var n = (long)Math.Log( g.Count, 2 );
                 cost += (NumberOfVariables - n);
             }
+
             return cost;
         }
 
         Coverage RemoveSubsets(Coverage groups)
         {
             var not_subsets = new Coverage();
-            foreach(var candidate_subset in groups)
+
+            foreach( var candidate_subset in groups )
             {
-                if (!groups.Any(candidate_superset => candidate_subset.IsProperSubsetOf(candidate_superset)))
-                    not_subsets.Add(candidate_subset);
+                if ( !groups.Any(candidate_superset => candidate_subset.IsProperSubsetOf(candidate_superset)) )
+                    not_subsets.Add( candidate_subset );
             }
 
             return not_subsets;
